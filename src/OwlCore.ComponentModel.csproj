@@ -19,6 +19,7 @@
 		<Description>Provides classes that are used to implement the run-time behavior of components.</Description>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageIcon>logo.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
 		<PackageReleaseNotes>
 --- 0.0.0 ---
 [New]
@@ -61,9 +62,9 @@ Initial separated package release of OwlCore.ComponentModel. Transferred from Ow
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="logo.png">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
+		<None Update="logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
 </Project>
