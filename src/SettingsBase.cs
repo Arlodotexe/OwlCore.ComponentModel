@@ -24,7 +24,7 @@ namespace OwlCore.ComponentModel
 
         private readonly IAsyncSerializer<Stream> _settingSerializer;
         private readonly SemaphoreSlim _storageSemaphore = new(1, 1);
-        private readonly ConcurrentDictionary<string, SettingsBase.SettingValue> _runtimeStorage = new();
+        private readonly ConcurrentDictionary<string, SettingValue> _runtimeStorage = new();
 
         /// <summary>
         /// Creates a new instance of <see cref="SettingsBase"/>.
@@ -50,6 +50,11 @@ namespace OwlCore.ComponentModel
         protected bool FlushOnlyChangedValues { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether changes have been made to properties which have not yet been saved to disk.
+        /// </summary>
+        public bool HasUnsavedChanges => _runtimeStorage.Values.Any(x => x.IsDirty);
+
+        /// <summary>
         /// A folder abstraction where the settings are stored and persisted.
         /// </summary>
         public IModifiableFolder Folder { get; }
@@ -60,8 +65,10 @@ namespace OwlCore.ComponentModel
         /// <param name="value">The value to store.</param>
         /// <param name="key">A unique identifier for this setting.</param>
         /// <typeparam name="T">The type of the stored value.</typeparam>
-        protected void SetSetting<T>(T value, [CallerMemberName] string key = "")
+        protected virtual void SetSetting<T>(T value, [CallerMemberName] string key = "")
         {
+            var hadUnsavedChanges = HasUnsavedChanges;
+
             if (value is null)
             {
                 _runtimeStorage.TryRemove(key, out _);
@@ -75,11 +82,14 @@ namespace OwlCore.ComponentModel
                 }
                 else
                 {
-                    _runtimeStorage[key] = new(typeof(T), value);
+                    _runtimeStorage[key] = new(typeof(T), value, IsDirty: true);
                 }
             }
 
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(key));
+
+            if (!hadUnsavedChanges && HasUnsavedChanges)
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasUnsavedChanges)));
         }
 
         /// <summary>
@@ -88,7 +98,7 @@ namespace OwlCore.ComponentModel
         /// <param name="defaultValue">A <see cref="Func{TResult}"/> that returns a fallback value to use when the setting is retrieved but was no value was ever stored.</param>
         /// <param name="key">A unique identifier for this setting.</param>
         /// <typeparam name="T">The type of the stored value.</typeparam>
-        protected T GetSetting<T>(Func<T> defaultValue, [CallerMemberName] string key = "")
+        protected virtual T GetSetting<T>(Func<T> defaultValue, [CallerMemberName] string key = "")
         {
             if (_runtimeStorage.TryGetValue(key, out var value))
                 return (T)value.Data;
@@ -106,16 +116,21 @@ namespace OwlCore.ComponentModel
         /// Sets a settings value to its default.
         /// </summary>
         /// <param name="key">A unique identifier for the setting.</param>
-        public void ResetSetting(string key)
+        public virtual void ResetSetting(string key)
         {
+            var hadUnsavedChanges = HasUnsavedChanges;
+
             _runtimeStorage.TryRemove(key, out _);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(key));
+
+            if ((!hadUnsavedChanges && HasUnsavedChanges) || (hadUnsavedChanges && !HasUnsavedChanges))
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasUnsavedChanges)));
         }
 
         /// <summary>
         /// Sets all settings values to their default.
         /// </summary>
-        public void ResetAllSettings()
+        public virtual void ResetAllSettings()
         {
             foreach (string key in _runtimeStorage.Keys)
                 ResetSetting(key);
@@ -135,6 +150,8 @@ namespace OwlCore.ComponentModel
 
             foreach (var kvp in _runtimeStorage)
             {
+                var hadUnsavedChanges = HasUnsavedChanges;
+
                 // Keeping storage of metadata (e.g. original type) separate from actual data allows us to
                 // pass the file stream to the serializer directly, without loading the whole thing into memory
                 // for modification. 
@@ -183,6 +200,9 @@ namespace OwlCore.ComponentModel
 
                     // Setting saved, set IsDirty to false
                     kvp.Value.IsDirty = false;
+
+                    if ((!hadUnsavedChanges && HasUnsavedChanges) || (hadUnsavedChanges && !HasUnsavedChanges))
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasUnsavedChanges)));
                 }
                 catch (Exception ex)
                 {
@@ -223,6 +243,9 @@ namespace OwlCore.ComponentModel
                 var typeFile = files.FirstOrDefault(x => x.Name == $"{settingDataFile.Name}{TypeFileSuffix}");
                 if (typeFile is null)
                     continue; // Type file may be missing or deleted.
+                
+                var hadUnsavedChanges = HasUnsavedChanges;
+
                 try
                 {
                     using var settingDataStream = await settingDataFile.OpenStreamAsync(cancellationToken: token);
@@ -243,6 +266,9 @@ namespace OwlCore.ComponentModel
                     _runtimeStorage[settingDataFile.Name] = new(originalType, settingData, false); // Data doesn't need to be saved
 
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(settingDataFile.Name));
+
+                    if ((!hadUnsavedChanges && HasUnsavedChanges) || (hadUnsavedChanges && !HasUnsavedChanges))
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasUnsavedChanges)));
                 }
                 catch (Exception ex)
                 {
@@ -291,7 +317,7 @@ namespace OwlCore.ComponentModel
         /// <param name="Type">The type of setting.</param>
         /// <param name="Data">The value of the setting.</param>
         /// <param name="IsDirty">Determines whether the <paramref name="Data"/> was modified or not.</param>
-        public record SettingValue(Type Type, object Data, bool IsDirty = true)
+        public record SettingValue(Type Type, object Data, bool IsDirty)
         {
             /// <summary>
             /// Gets or sets the value of the setting.
