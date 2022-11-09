@@ -191,7 +191,7 @@ namespace OwlCore.ComponentModel
                     Guard.IsNotNullOrWhiteSpace(kvp.Value.Type.FullName);
 
                     // Store the known type for later deserialization. Serializer cannot be relied on for this.
-                    var typeContentBytes = Encoding.UTF8.GetBytes(kvp.Value.Type.FullName);
+                    var typeContentBytes = Encoding.UTF8.GetBytes(kvp.Value.Type.AssemblyQualifiedName ?? kvp.Value.Type.FullName);
                     using var typeFileStream = await typeFile.OpenStreamAsync(FileAccess.ReadWrite, token);
                     typeFileStream.Seek(0, SeekOrigin.Begin);
                     typeFileStream.SetLength(typeContentBytes.Length);
@@ -255,7 +255,6 @@ namespace OwlCore.ComponentModel
                     if (string.IsNullOrWhiteSpace(typeFileContentString))
                         continue;
 
-                    // Get original type
                     var originalType = Type.GetType(typeFileContentString);
                     if (originalType is null)
                         continue;

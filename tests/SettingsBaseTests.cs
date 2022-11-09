@@ -61,6 +61,25 @@ public class SettingsBaseTests
     }
 
     [TestMethod, Timeout(2000)]
+    public async Task SaveAndLoadEnumAsync()
+    {
+        var settingsStore = new MemoryFolder(id: "Settings", name: "Settings");
+        var settings = new TestSettings(settingsStore);
+
+        var newValue = TestSettings.EnumTest.Second;
+
+        // Initial value must not equal new value for test to be valid.
+        Assert.AreNotEqual(newValue, settings.Enum);
+
+        settings.Enum = newValue;
+
+        await settings.SaveAsync();
+        await settings.LoadAsync();
+
+        Assert.AreEqual(newValue, settings.Enum);
+    }
+
+    [TestMethod, Timeout(2000)]
     public async Task SaveValueSaveNewShorterValueThenLoad()
     {
         var settingsStore = new MemoryFolder(id: "Settings", name: "Settings");
@@ -461,6 +480,7 @@ public class SettingsBaseTests
     {
         public const string StringData_DefaultValue = "Default value";
         public const bool State_DefaultValue = false;
+        public const EnumTest Enum_DefaultValue =  EnumTest.First;
 
         public TestSettings(IModifiableFolder folder)
             : base(folder, NewtonsoftStreamSerializer.Singleton)
@@ -476,6 +496,12 @@ public class SettingsBaseTests
         public bool State
         {
             get => GetSetting(() => State_DefaultValue);
+            set => SetSetting(value);
+        }
+
+        public EnumTest Enum
+        {
+            get => GetSetting(() => Enum_DefaultValue);
             set => SetSetting(value);
         }
 
@@ -495,6 +521,12 @@ public class SettingsBaseTests
 
             public byte[] Data { get; set; }
             public string Label { get; set; }
+        }
+
+        public enum EnumTest
+        {
+            First,
+            Second,
         }
     }
 
