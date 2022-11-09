@@ -14,13 +14,17 @@
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
 		<Author>Arlo Godfrey</Author>
-		<Version>0.1.0</Version>
+		<Version>0.1.1</Version>
 		<Product>OwlCore</Product>
 		<Description>Provides classes that are used to implement the run-time behavior of components.</Description>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageIcon>logo.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
 		<PackageReleaseNotes>
+--- 0.1.1 ---
+[Fixes]
+Fixed a possible multiple enumeration when calling SettingsBase.SaveAsync.
+
 --- 0.1.0 ---
 [New]
 SettingsBase.HasUnsavedChanges has been added, with notification support.

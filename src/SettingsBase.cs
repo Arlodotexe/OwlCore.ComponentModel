@@ -148,7 +148,7 @@ namespace OwlCore.ComponentModel
 
             await _storageSemaphore.WaitAsync(token);
 
-            foreach (var kvp in _runtimeStorage)
+            foreach (var kvp in _runtimeStorage.ToArray())
             {
                 var hadUnsavedChanges = HasUnsavedChanges;
 
