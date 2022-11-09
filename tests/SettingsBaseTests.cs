@@ -3,6 +3,7 @@ using OwlCore.Storage;
 using OwlCore.Storage.Memory;
 using System.ComponentModel;
 using System.Text;
+using OwlCore.Extensions;
 
 namespace OwlCore.ComponentModel.Tests;
 
