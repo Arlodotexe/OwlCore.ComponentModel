@@ -14,13 +14,20 @@
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
 		<Author>Arlo Godfrey</Author>
-		<Version>0.1.2</Version>
+		<Version>0.2.0</Version>
 		<Product>OwlCore</Product>
 		<Description>Provides classes that are used to implement the run-time behavior of components.</Description>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageIcon>logo.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
 		<PackageReleaseNotes>
+--- 0.2.0 ---
+[New]
+Added SettingsBase.OnPropertyChanged(string) method. Allows cleaner INPC invocation.
+
+[Improvements]
+All events in SettingsBase are now virtual.
+
 --- 0.1.2 ---
 [Fixes]
 Fixed an issue where SettingsBase couldn't parse the type data for an Enum.

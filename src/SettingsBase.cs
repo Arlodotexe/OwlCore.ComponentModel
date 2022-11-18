@@ -202,7 +202,7 @@ namespace OwlCore.ComponentModel
                     kvp.Value.IsDirty = false;
 
                     if ((!hadUnsavedChanges && HasUnsavedChanges) || (hadUnsavedChanges && !HasUnsavedChanges))
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasUnsavedChanges)));
+                        OnPropertyChanged(nameof(HasUnsavedChanges));
                 }
                 catch (Exception ex)
                 {
@@ -243,7 +243,7 @@ namespace OwlCore.ComponentModel
                 var typeFile = files.FirstOrDefault(x => x.Name == $"{settingDataFile.Name}{TypeFileSuffix}");
                 if (typeFile is null)
                     continue; // Type file may be missing or deleted.
-                
+
                 var hadUnsavedChanges = HasUnsavedChanges;
 
                 try
@@ -263,11 +263,11 @@ namespace OwlCore.ComponentModel
                     var settingData = await _settingSerializer.DeserializeAsync(originalType, settingDataStream, token);
 
                     _runtimeStorage[settingDataFile.Name] = new(originalType, settingData, false); // Data doesn't need to be saved
-
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(settingDataFile.Name));
+                    
+                    OnPropertyChanged(settingDataFile.Name);
 
                     if ((!hadUnsavedChanges && HasUnsavedChanges) || (hadUnsavedChanges && !HasUnsavedChanges))
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasUnsavedChanges)));
+                        OnPropertyChanged(nameof(HasUnsavedChanges));
                 }
                 catch (Exception ex)
                 {
@@ -298,17 +298,27 @@ namespace OwlCore.ComponentModel
         }
 
         /// <inheritdoc />
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public virtual event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raised when an exception is thrown during <see cref="LoadAsync(CancellationToken?)"/>.
         /// </summary>
-        public event EventHandler<SettingPersistFailedEventArgs>? LoadFailed;
+        public virtual event EventHandler<SettingPersistFailedEventArgs>? LoadFailed;
 
         /// <summary>
         /// Raised when an exception is thrown during <see cref="SaveAsync(CancellationToken?)"/>.
         /// </summary>
-        public event EventHandler<SettingPersistFailedEventArgs>? SaveFailed;
+        public virtual event EventHandler<SettingPersistFailedEventArgs>? SaveFailed;
+
+        /// <summary>
+        /// Raises the PropertyChanged event.
+        /// </summary>
+        /// <param name="propertyName">The name of the property to raise the event for.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         /// <summary>
         /// A wrapper that holds settings data.
