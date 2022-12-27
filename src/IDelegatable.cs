@@ -1,9 +1,7 @@
 ﻿namespace OwlCore.ComponentModel
 {
     /// <summary>
-    /// Indicates that the class is holding an a reference
-    /// to an implementation of <typeparamref name="T"/>
-    /// which properties, events or methods can be delegating to.
+    /// Indicates that the class is holding a reference to an implementation of `<typeparamref name="T"/>`, to which public properties, events or methods may be delegated to.
     /// </summary>
     /// <typeparam name="T">The type that is delegated to.</typeparam>
     public interface IDelegatable<T>
