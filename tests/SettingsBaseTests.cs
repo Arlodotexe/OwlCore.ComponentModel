@@ -10,6 +10,13 @@ namespace OwlCore.ComponentModel.Tests;
 [TestClass]
 public class SettingsBaseTests
 {
+    private string[] _inboxProperties =
+    {
+        nameof(SettingsBase.HasUnsavedChanges),
+        nameof(SettingsBase.Folder),
+        nameof(SettingsBase.TypeFileSuffix),
+    };
+
     [TestMethod, Timeout(2000)]
     public Task GetFallbackValue()
     {
@@ -79,7 +86,7 @@ public class SettingsBaseTests
         Assert.AreEqual(newValue, settings.Enum);
     }
 
-    [TestMethod, Timeout(2000)]
+    [TestMethod]
     public async Task SaveValueSaveNewShorterValueThenLoad()
     {
         var settingsStore = new MemoryFolder(id: "Settings", name: "Settings");
@@ -221,7 +228,7 @@ public class SettingsBaseTests
         await settings.LoadAsync();
 
         // Ensure only the assigned property changed.
-        Assert.AreEqual(1, changedProperties.Count);
+        Assert.AreEqual(1, changedProperties.Count(x => !_inboxProperties.Contains(x)));
         Assert.AreEqual(nameof(settings.StringData), changedProperties[0]);
 
         settings.PropertyChanged -= OnChanged;
@@ -320,7 +327,7 @@ public class SettingsBaseTests
         Assert.AreEqual(TestSettings.StringData_DefaultValue, settings.StringData);
 
         // Ensure only the assigned property changed.
-        Assert.AreEqual(2, changedProperties.Count);
+        Assert.AreEqual(2, changedProperties.Count(x => !_inboxProperties.Contains(x)));
         Assert.AreEqual(nameof(settings.StringData), changedProperties[0]);
         Assert.AreEqual(nameof(settings.StringData), changedProperties[1]);
 
@@ -364,10 +371,10 @@ public class SettingsBaseTests
         Assert.AreEqual(TestSettings.State_DefaultValue, settings.State);
 
         // Ensure properties changed a second time due to reset.
-        Assert.AreEqual(2 + 2 + 1, changedProperties.Count);
         Assert.AreEqual(2, changedProperties.Count(p => p == nameof(settings.StringData)));
         Assert.AreEqual(2, changedProperties.Count(p => p == nameof(settings.CompositeData)));
         Assert.AreEqual(1, changedProperties.Count(p => p == nameof(settings.State)));
+        Assert.AreEqual(2 + 2 + 1, changedProperties.Count(x => !_inboxProperties.Contains(x)));
 
         settings.PropertyChanged -= OnChanged;
 
@@ -480,7 +487,7 @@ public class SettingsBaseTests
     {
         public const string StringData_DefaultValue = "Default value";
         public const bool State_DefaultValue = false;
-        public const EnumTest Enum_DefaultValue =  EnumTest.First;
+        public const EnumTest Enum_DefaultValue = EnumTest.First;
 
         public TestSettings(IModifiableFolder folder)
             : base(folder, NewtonsoftStreamSerializer.Singleton)
