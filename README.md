@@ -5,7 +5,7 @@ Provides classes that are used to implement the run-time behavior of components.
 ## Featuring:
 - **IAsyncInit** - A common interface used for asynchronous class initialization.
 - **ISerializer** and **IAsyncSerializer** - An interface for serializing to and from a type.
-- **IDelegatable{T}** - Indicates that the class is holding a reference to an implementation of T, which properties, events or methods may be delegated to.
+- **IDelegatable{T}** - Indicates that the class is holding a reference to an implementation of T, which properties, events or methods may be delegated to when accessing members.
 - **ChainedProxyBuilder** - Builds a list of IDelegatable{T} into a proxied chain, where each item might delegate member access to the next item.
 - **SettingsBase** - A base class for managing settings values as properties. Fast access in memory, with data persistence via OwlCore.Storage.
 
