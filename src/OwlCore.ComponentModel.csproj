@@ -1,26 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<LangVersion>10.0</LangVersion>
-		<WarningsAsErrors>nullable</WarningsAsErrors>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>10.0</LangVersion>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<IncludeSymbols>true</IncludeSymbols>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
 
-		<!-- Include symbol files (*.pdb) in the built .nupkg -->
-		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <!-- Include symbol files (*.pdb) in the built .nupkg -->
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
-		<Author>Arlo Godfrey</Author>
-		<Version>0.3.0</Version>
-		<Product>OwlCore</Product>
-		<Description>Provides classes that are used to implement the run-time behavior of components.</Description>
-		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-		<PackageIcon>logo.png</PackageIcon>
-		<PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
-		<PackageReleaseNotes>
+    <Author>Arlo Godfrey</Author>
+    <Version>0.4.0</Version>
+    <Product>OwlCore</Product>
+    <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageIcon>logo.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
+    <PackageReleaseNotes>
+--- 0.4.0 ---
+[New]
+Added IDelegable to replace IDelegatable in a future release.
+Added NotifyCollectionChangedEventHandler and NotifyCollectionChangedEventArgs to replace CollectionChangedEventHandler and CollectionChangedItem in a future release.
+
+[Improvements]
+Marked IDelegatable as Obsolete. Will be renamed to IDelegable in a future release.
+Marked CollectionChangedEventHandler as Obsolete. Will be replaced with a generic NotifyCollectionChangedEventHandler in the future.
+      
 --- 0.3.0 ---
 [Breaking]
 Inherited breaking changes from OwlCore.Storage 0.8.x.
@@ -54,46 +63,46 @@ All public and protected methods in SettingsBase are now virtual.
 [New]
 Initial separated package release of OwlCore.ComponentModel. Transferred from OwlCore 0.1.0.
 		</PackageReleaseNotes>
-		<DebugType>embedded</DebugType>
-		<NeutralLanguage>en</NeutralLanguage>
-		<Authors>Arlo Godfrey</Authors>
-	</PropertyGroup>
+    <DebugType>embedded</DebugType>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Authors>Arlo Godfrey</Authors>
+  </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<DefineConstants>DEBUG;TRACE</DefineConstants>
-		<DebugType>full</DebugType>
-		<DebugSymbols>true</DebugSymbols>
-	</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Optimize>true</Optimize>
-		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-		<Deterministic>true</Deterministic>
-	</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="LICENSE.txt">
-			<Pack>True</Pack>
-			<PackagePath></PackagePath>
-		</None>
-	</ItemGroup>
+  <ItemGroup>
+    <None Include="LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
-		<PackageReference Include="OwlCore.Storage" Version="0.8.2" />
-		<PackageReference Include="CommunityToolkit.Diagnostics" Version="8.1.0" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="OwlCore.Storage" Version="0.8.5" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.0" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<None Update="logo.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
+  <ItemGroup>
+    <None Update="logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 </Project>
