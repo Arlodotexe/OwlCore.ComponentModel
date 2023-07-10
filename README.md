@@ -25,7 +25,7 @@ Or using [dotnet](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet)
 This example uses source generators from System.Text.Json for serialization.
 
 ```cs
-// Basic usage
+// Basic usage. Can be any OwlCore.Storage.IModifiableFolder, such as MemoryFolder, WindowsStorageFolder, ArchiveFolder, MfsFolder, etc.
 var settingsPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 var settings = new MySettings(new SystemFolder(settingsPath));
 
