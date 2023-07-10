@@ -57,6 +57,7 @@ public class MySettings : SettingsBase
     }
 }
 
+// Source-generator based serializer
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(TimeSpan))]
