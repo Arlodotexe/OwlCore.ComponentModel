@@ -14,13 +14,17 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.5.0 ---
+[New]
+Added LazySeekStream. Wraps around a non-seekable stream to enable seeking functionality with lazy loading of the source.
+
 --- 0.4.0 ---
 [New]
 Added IDelegable to replace IDelegatable in a future release.
@@ -92,11 +96,11 @@ Initial separated package release of OwlCore.ComponentModel. Transferred from Ow
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="OwlCore.Storage" Version="0.8.5" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.0" />
+    <PackageReference Include="OwlCore.Storage" Version="0.9.1" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2" />
   </ItemGroup>
 
   <ItemGroup>
