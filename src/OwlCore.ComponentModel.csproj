@@ -14,13 +14,17 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.7.0 ---
+[Breaking]
+SettingsBase has been moved into a separate package, OwlCore.ComponentModel.Settings. This allows us to remove the dependency on OwlCore.Storage, which is not strictly needed for most consumers of this package.
+
 --- 0.6.0 ---
 [New]
 Added LengthOverrideStream, a simple Stream wrapper that allows overriding the Length property.
@@ -104,8 +108,7 @@ Initial separated package release of OwlCore.ComponentModel. Transferred from Ow
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-    <PackageReference Include="OwlCore.Storage" Version="0.9.2" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2" />
   </ItemGroup>

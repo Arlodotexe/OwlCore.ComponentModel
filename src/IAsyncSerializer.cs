@@ -11,7 +11,7 @@ namespace OwlCore.ComponentModel
     public interface IAsyncSerializer<TSerialized>
     {
         /// <summary>
-        /// Serializes the provided <paramref cref="data"/> into <typeparam name="TSerialized"/>.
+        /// Serializes the provided <paramref name="data"/> into <typeparamref name="TSerialized"/>.
         /// </summary>
         /// <param name="data">The object instance to serialize.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the ongoing task.</param>
@@ -20,7 +20,7 @@ namespace OwlCore.ComponentModel
         public Task<TSerialized> SerializeAsync<T>(T data, CancellationToken? cancellationToken = null);
         
         /// <summary>
-        /// Serializes the provided <paramref cref="data"/> into <typeparam name="TSerialized"/>.
+        /// Serializes the provided <paramref name="data"/> into <typeparamref name="TSerialized"/>.
         /// </summary>
         /// <param name="data">The object instance to serialize.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the ongoing task.</param>
@@ -46,15 +46,16 @@ namespace OwlCore.ComponentModel
         /// <returns>A deserialized instance of the provided serialized data.</returns>
         public Task<object> DeserializeAsync(Type returnType, TSerialized serialized, CancellationToken? cancellationToken = null);
     }
-    
+
     /// <summary>
     /// An interface that allows serializing data to <typeparamref name="TDeserialized"/> and from <typeparamref name="TSerialized"/> asynchronously.
     /// </summary>
     /// <typeparam name="TSerialized">The type that data is serialized to.</typeparam>
+    /// <typeparam name="TDeserialized">The type that data is deserialized to.</typeparam>
     public interface IAsyncSerializer<TSerialized, TDeserialized>
     {
         /// <summary>
-        /// Serializes the provided <paramref cref="data"/> into <typeparam name="TSerialized"/>.
+        /// Serializes the provided <paramref name="data"/> into <typeparamref name="TSerialized"/>.
         /// </summary>
         /// <param name="data">The object instance to serialize.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the ongoing task.</param>
