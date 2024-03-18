@@ -7,7 +7,8 @@ Provides classes that are used to implement the run-time behavior of components.
 - **ISerializer** and **IAsyncSerializer** - An interface for serializing to and from a type.
 - **IDelegatable{T}** - Indicates that the class is holding a reference to an implementation of T, which properties, events or methods may be delegated to when accessing members.
 - **ChainedProxyBuilder** - Builds a list of IDelegatable{T} into a proxied chain, where each item might delegate member access to the next item.
-- **SettingsBase** - A base class for managing settings values as properties. Fast access in memory, with data persistence via OwlCore.Storage.
+
+**Note**: SettingsBase has been moved to [OwlCore.ComponentModel.Settings](https://github.com/Arlodotexe/OwlCore.ComponentModel.Settings).
 
 ## Install
 Published releases are available on [NuGet](https://www.nuget.org/packages/OwlCore.ComponentModel). To install, run the following command in the [Package Manager Console](https://docs.nuget.org/docs/start-here/using-the-package-manager-console).
