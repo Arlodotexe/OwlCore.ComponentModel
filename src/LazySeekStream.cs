@@ -6,10 +6,17 @@ namespace OwlCore.ComponentModel;
 /// <summary>
 /// Wraps around a non-seekable stream to enable seeking functionality with lazy loading of the source.
 /// </summary>
-public class LazySeekStream : Stream
+public class LazySeekStream : Stream, IFlushable
 {
-    private Stream _originalStream;
-    private MemoryStream _memoryStream;
+    /// <summary>
+    /// The original stream used to load data data into <see cref="MemoryStream"/>.
+    /// </summary>
+    protected Stream SourceStream { get; }
+
+    /// <summary>
+    /// The backing memory stream used for lazy seeking.
+    /// </summary>
+    protected MemoryStream MemoryStream { get; }
 
     /// <summary>
     /// Creates a new instance of <see cref="LazySeekStream"/>.
@@ -17,45 +24,45 @@ public class LazySeekStream : Stream
     /// <param name="stream"></param>
     public LazySeekStream(Stream stream)
     {
-        _originalStream = stream;
+        SourceStream = stream;
 
-        _memoryStream = new MemoryStream()
+        MemoryStream = new MemoryStream()
         {
             Capacity = (int)Length,
         };
     }
 
     /// <inheritdoc />
-    public override bool CanRead => _memoryStream.CanRead;
+    public override bool CanRead => MemoryStream.CanRead;
 
     /// <inheritdoc />
-    public override bool CanSeek => _memoryStream.CanSeek;
+    public override bool CanSeek => MemoryStream.CanSeek;
 
     /// <inheritdoc />
     public override bool CanWrite => false;
 
     /// <inheritdoc />
-    public override long Length => _originalStream.Length;
+    public override long Length => SourceStream.Length;
 
     /// <inheritdoc />
     public override long Position
     {
-        get => _memoryStream.Position;
+        get => MemoryStream.Position;
         set
         {
             if (value < 0)
                 throw new IOException("An attempt was made to move the position before the beginning of the stream.");
 
             // Check if the requested position is beyond the current length of the memory stream
-            if (value > _memoryStream.Length)
+            if (value > MemoryStream.Length)
             {
-                long additionalBytesNeeded = value - _memoryStream.Length;
+                long additionalBytesNeeded = value - MemoryStream.Length;
                 var buffer = new byte[additionalBytesNeeded];
                 long totalBytesRead = 0;
 
                 while (totalBytesRead < additionalBytesNeeded)
                 {
-                    int bytesRead = _originalStream.Read(buffer, (int)totalBytesRead, (int)(additionalBytesNeeded - totalBytesRead));
+                    int bytesRead = SourceStream.Read(buffer, (int)totalBytesRead, (int)(additionalBytesNeeded - totalBytesRead));
                     if (bytesRead == 0)
                         break; // End of the original stream reached
 
@@ -63,17 +70,17 @@ public class LazySeekStream : Stream
                 }
 
                 // Write the newly read bytes to the end of the memory stream
-                _memoryStream.Seek(0, SeekOrigin.End);
-                _memoryStream.Write(buffer, 0, (int)totalBytesRead);
+                MemoryStream.Seek(0, SeekOrigin.End);
+                MemoryStream.Write(buffer, 0, (int)totalBytesRead);
             }
 
             // Set the new position of the memory stream
-            _memoryStream.Position = value;
+            MemoryStream.Position = value;
         }
     }
 
     /// <inheritdoc />
-    public override void Flush() => _memoryStream.Flush();
+    public override void Flush() => MemoryStream.Flush();
 
     /// <inheritdoc />
     public override int Read(byte[] buffer, int offset, int count)
@@ -81,9 +88,9 @@ public class LazySeekStream : Stream
         int totalBytesRead = 0;
 
         // Read from memory stream first
-        if (_memoryStream.Position < _memoryStream.Length)
+        if (MemoryStream.Position < MemoryStream.Length)
         {
-            totalBytesRead = _memoryStream.Read(buffer, offset, count);
+            totalBytesRead = MemoryStream.Read(buffer, offset, count);
             if (totalBytesRead == count)
             {
                 return totalBytesRead; // Complete read from memory stream
@@ -97,15 +104,15 @@ public class LazySeekStream : Stream
         // Read the remaining data directly into the provided buffer
         while (count > 0)
         {
-            int bytesReadFromOriginalStream = _originalStream.Read(buffer, offset, count);
+            int bytesReadFromOriginalStream = SourceStream.Read(buffer, offset, count);
             if (bytesReadFromOriginalStream == 0)
             {
                 break; // End of the original stream reached
             }
 
             // Write the new data from the original stream into the memory stream
-            _memoryStream.Seek(0, SeekOrigin.End);
-            _memoryStream.Write(buffer, offset, bytesReadFromOriginalStream);
+            MemoryStream.Seek(0, SeekOrigin.End);
+            MemoryStream.Write(buffer, offset, bytesReadFromOriginalStream);
 
             totalBytesRead += bytesReadFromOriginalStream;
             offset += bytesReadFromOriginalStream;
@@ -124,10 +131,10 @@ public class LazySeekStream : Stream
                 Position = offset;
                 break;
             case SeekOrigin.Current:
-                Position = _memoryStream.Position + offset;
+                Position = MemoryStream.Position + offset;
                 break;
             case SeekOrigin.End:
-                Position = _originalStream.Length + offset;
+                Position = SourceStream.Length + offset;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.");
@@ -142,35 +149,35 @@ public class LazySeekStream : Stream
         if (value < 0)
             throw new ArgumentOutOfRangeException(nameof(value), "Length must be non-negative.");
 
-        if (value < _memoryStream.Length)
+        if (value < MemoryStream.Length)
         {
             // Truncate the memory stream
-            _memoryStream.SetLength(value);
+            MemoryStream.SetLength(value);
         }
-        else if (value > _memoryStream.Length)
+        else if (value > MemoryStream.Length)
         {
-            long additionalBytesNeeded = value - _memoryStream.Length;
+            long additionalBytesNeeded = value - MemoryStream.Length;
 
             // Extend the memory stream with zeros or additional data from the original stream
-            if (_originalStream.CanRead && additionalBytesNeeded > 0)
+            if (SourceStream.CanRead && additionalBytesNeeded > 0)
             {
                 var buffer = new byte[additionalBytesNeeded];
-                int bytesRead = _originalStream.Read(buffer, 0, buffer.Length);
+                int bytesRead = SourceStream.Read(buffer, 0, buffer.Length);
 
-                _memoryStream.Seek(0, SeekOrigin.End);
-                _memoryStream.Write(buffer, 0, bytesRead);
+                MemoryStream.Seek(0, SeekOrigin.End);
+                MemoryStream.Write(buffer, 0, bytesRead);
 
                 if (bytesRead < additionalBytesNeeded)
                 {
                     // Fill the rest with zeros if the original stream didn't have enough data
                     var zeroFill = new byte[additionalBytesNeeded - bytesRead];
-                    _memoryStream.Write(zeroFill, 0, zeroFill.Length);
+                    MemoryStream.Write(zeroFill, 0, zeroFill.Length);
                 }
             }
             else
             {
                 // Fill with zeros if the original stream can't be read or no additional bytes are needed
-                _memoryStream.SetLength(value);
+                MemoryStream.SetLength(value);
             }
         }
     }
@@ -181,8 +188,13 @@ public class LazySeekStream : Stream
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
+        // See https://stackoverflow.com/a/1015790
+        // If you are extending Stream, or MemoryStream etc. you will need to implement a call to Flush() when disposed/closed if it is necessary.
+        Flush();
+
+        // Dispose remaining resources 
         base.Dispose(disposing);
-        _memoryStream.Dispose();
-        _originalStream.Dispose();
+        MemoryStream.Dispose();
+        SourceStream.Dispose();
     }
 }
