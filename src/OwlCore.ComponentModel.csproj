@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <WarningsAsErrors>nullable</WarningsAsErrors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -14,13 +14,25 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.7.0</Version>
+    <Version>0.8.0</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.8.0 ---
+[New]
+Added IFlushable
+Added IHasId
+Added ISources
+Added IReadOnlySources
+Added WritableLazySeekStream. Writes are held in the underlying LazySeekStream.MemoryStream and are written to a given destination stream on flush.
+
+[Improvements]
+Removed internal IsExternalInit in favor of PolySharp.
+MemoryStream and SourceStream are now protected instead of private on LazySeekStream.
+      
 --- 0.7.0 ---
 [Breaking]
 SettingsBase has been moved into a separate package, OwlCore.ComponentModel.Settings. This allows us to remove the dependency on OwlCore.Storage, which is not strictly needed for most consumers of this package.
@@ -109,6 +121,10 @@ Initial separated package release of OwlCore.ComponentModel. Transferred from Ow
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="PolySharp" Version="1.14.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2" />
   </ItemGroup>
