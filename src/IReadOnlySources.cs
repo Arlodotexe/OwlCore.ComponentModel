@@ -9,7 +9,7 @@ namespace OwlCore.ComponentModel;
 public interface IReadOnlySources<T>
 {
     /// <summary>
-    /// The sources for this event stream. Each contains timestamped event data from all participating nodes.
+    /// The sources for the object.
     /// </summary>
     IReadOnlyCollection<T> Sources { get; init; }
 }
