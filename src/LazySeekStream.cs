@@ -1,5 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using CommunityToolkit.Diagnostics;
 
 namespace OwlCore.ComponentModel;
 
@@ -9,132 +12,207 @@ namespace OwlCore.ComponentModel;
 public class LazySeekStream : Stream, IFlushable
 {
     /// <summary>
-    /// The original stream used to load data data into <see cref="MemoryStream"/>.
+    /// The original stream used to load data data into <see cref="BackingStream"/>.
     /// </summary>
-    protected Stream SourceStream { get; }
+    public Stream SourceStream { get; }
 
     /// <summary>
     /// The backing memory stream used for lazy seeking.
     /// </summary>
-    protected MemoryStream MemoryStream { get; }
+    public Stream BackingStream { get; }
 
     /// <summary>
     /// Creates a new instance of <see cref="LazySeekStream"/>.
     /// </summary>
-    /// <param name="stream"></param>
-    public LazySeekStream(Stream stream)
+    /// <param name="sourceStream"></param>
+    public LazySeekStream(Stream sourceStream)
     {
-        SourceStream = stream;
+        SourceStream = sourceStream;
 
-        MemoryStream = new MemoryStream()
+        if (sourceStream.Length > int.MaxValue)
+            throw new ArgumentException($"The provided source stream is too long to fit into a {nameof(MemoryStream)}. Please provide a writeable backing stream to store lazily loaded data in.");
+
+        BackingStream = new MemoryStream
         {
-            Capacity = (int)Length,
+            Capacity = (int)sourceStream.Length,
         };
     }
 
-    /// <inheritdoc />
-    public override bool CanRead => MemoryStream.CanRead;
+    /// <summary>
+    /// Creates a new instance of <see cref="LazySeekStream"/>.
+    /// </summary>
+    /// <param name="sourceStream">The non-seekable source stream to read from.</param>
+    /// <param name="backingStream">The seekable backing stream where read <paramref name="sourceStream"/> data is persisted, and where writes are delegated to.</param>
+    public LazySeekStream(Stream sourceStream, Stream backingStream)
+    {
+        Guard.IsTrue(backingStream.CanSeek);
+        SourceStream = sourceStream;
+        BackingStream = backingStream;
+    }
 
     /// <inheritdoc />
-    public override bool CanSeek => MemoryStream.CanSeek;
+    public override bool CanRead => SourceStream.CanRead;
 
     /// <inheritdoc />
-    public override bool CanWrite => false;
+    public override bool CanWrite => BackingStream.CanWrite;
+
+    /// <summary>
+    /// Gets the length of this stream in bytes from either <see cref="SourceStream"/> or <see cref="BackingStream"/>, whichever is larger.
+    /// </summary>
+    /// <remarks>
+    /// The backing stream may be larger than the source stream when source starts empty and the stream is written to.
+    /// <para/>
+    /// The source stream may be larger than the backing stream when backing starts empty and source is read from.
+    /// </remarks>
+    public override long Length => Math.Max(SourceStream.Length, BackingStream.Length);
 
     /// <inheritdoc />
-    public override long Length => SourceStream.Length;
+    public override bool CanSeek => BackingStream.CanSeek;
 
     /// <inheritdoc />
     public override long Position
     {
-        get => MemoryStream.Position;
+        get => BackingStream.Position;
         set
         {
             if (value < 0)
                 throw new IOException("An attempt was made to move the position before the beginning of the stream.");
 
-            // Check if the requested position is beyond the current length of the memory stream
-            if (value > MemoryStream.Length)
+            // Check if the requested position is beyond the current length of the backing stream
+            if (value > BackingStream.Length)
             {
-                long additionalBytesNeeded = value - MemoryStream.Length;
-                var buffer = new byte[additionalBytesNeeded];
-                long totalBytesRead = 0;
+                BackingStream.Seek(0, SeekOrigin.End);
+                long additionalBytesNeeded = value - BackingStream.Length;
+                int bufferSize = 81920;
+                var buffer = new byte[bufferSize];
 
-                while (totalBytesRead < additionalBytesNeeded)
+                // Advance and forward buffer from source stream to backing stream
+                // until all needed bytes are read.
+                while (additionalBytesNeeded > 0)
                 {
-                    int bytesRead = SourceStream.Read(buffer, (int)totalBytesRead, (int)(additionalBytesNeeded - totalBytesRead));
-                    if (bytesRead == 0)
-                        break; // End of the original stream reached
+                    int bufferPos = 0;
+                    while (bufferPos < buffer.Length)
+                    {
+                        // Read from source to buffer
+                        var remainingBufferLength = buffer.Length - bufferPos;
+                        var bytesRead = SourceStream.Read(buffer, offset: bufferPos, count: remainingBufferLength);
 
-                    totalBytesRead += bytesRead;
+                        // Write the partial buffer to the backing stream
+                        BackingStream.Write(buffer, bufferPos, bytesRead);
+
+                        bufferPos += bytesRead;
+                        additionalBytesNeeded -= bytesRead;
+
+                        // Reset position if next starting position is out range for buffer.
+                        if (bufferPos >= buffer.Length)
+                            bufferPos = 0;
+
+                        Guard.IsLessThanOrEqualTo(bytesRead, maximum: remainingBufferLength);
+                        Guard.IsLessThanOrEqualTo(bufferPos, maximum: buffer.Length);
+
+                        // The below needs the variable for further checks, the above doesn't.
+                        // They're identical but the above form is used elsewhere. Kept as example.
+                        var unfilledBufferLength = remainingBufferLength - bytesRead;
+                        Guard.IsGreaterThanOrEqualTo(unfilledBufferLength, 0);
+
+                        // End of stream reached
+                        if (bytesRead == 0)
+                            break;
+                    }
                 }
-
-                // Write the newly read bytes to the end of the memory stream
-                MemoryStream.Seek(0, SeekOrigin.End);
-                MemoryStream.Write(buffer, 0, (int)totalBytesRead);
             }
 
             // Set the new position of the memory stream
-            MemoryStream.Position = value;
+            BackingStream.Position = value;
         }
     }
 
     /// <inheritdoc />
-    public override void Flush() => MemoryStream.Flush();
+    public override void Flush() => BackingStream.Flush();
 
     /// <inheritdoc />
     public override int Read(byte[] buffer, int offset, int count)
-    {
-        int totalBytesRead = 0;
+    {   
+        int backingBytesRead = 0;
 
-        // Read from memory stream first
-        if (MemoryStream.Position < MemoryStream.Length)
+        // If Position is within range of the backing stream, read from there.
+        var distanceFromBackingStreamLength = BackingStream.Length - Position;
+        if (distanceFromBackingStreamLength > 0)
         {
-            totalBytesRead = MemoryStream.Read(buffer, offset, count);
-            if (totalBytesRead == count)
+            // Either read all remaining backing bytes, or only the provided count.
+            // Whichever is smaller.
+            // If more bytes are requested than available in backing, backing will be read first and source will be read after.
+            var totalBackingBytesToRead = Math.Min(distanceFromBackingStreamLength, count);
+            var remainingBackingBytesToRead = totalBackingBytesToRead;
+            var bufferSize = count;
+            while (remainingBackingBytesToRead > 0)
             {
-                return totalBytesRead; // Complete read from memory stream
+                // Read from backing to buffer
+                var bytesRead = BackingStream.Read(buffer, offset + backingBytesRead, bufferSize);
+
+                // Increment total, decrementing remaining.
+                backingBytesRead += bytesRead;
+                remainingBackingBytesToRead -= bytesRead;
+
+                // Remaining backing bytes were read.
+                if (backingBytesRead == totalBackingBytesToRead)
+                    break;
+
+                // End of stream reached, no backing bytes remain.
+                if (bytesRead == 0)
+                    break;
             }
 
-            // Prepare to read the remaining data from the original stream
-            offset += totalBytesRead;
-            count -= totalBytesRead;
+            // Checks for min, max bounds
+            // Should always read the number of bytes available.
+            // Source can only advance where it left off.
+            Guard.IsEqualTo(remainingBackingBytesToRead, 0);
+            Guard.IsEqualTo(backingBytesRead, totalBackingBytesToRead);
         }
 
-        // Read the remaining data directly into the provided buffer
-        while (count > 0)
+        // Remaining bytes not read by the backing stream should be read from source and copied to backing.
+        var totalSourceBytesToRead = count - backingBytesRead;
+        var remainingSourceBytesToRead = totalSourceBytesToRead;
+        var sourceBytesRead = 0;
+        while (remainingSourceBytesToRead > 0)
         {
-            int bytesReadFromOriginalStream = SourceStream.Read(buffer, offset, count);
-            if (bytesReadFromOriginalStream == 0)
-            {
-                break; // End of the original stream reached
-            }
+            // Read from source to buffer.
+            int bytesRead = SourceStream.Read(buffer, sourceBytesRead + offset, remainingSourceBytesToRead);
 
-            // Write the new data from the original stream into the memory stream
-            MemoryStream.Seek(0, SeekOrigin.End);
-            MemoryStream.Write(buffer, offset, bytesReadFromOriginalStream);
+            // Write buffer to backing
+            BackingStream.Write(buffer, sourceBytesRead + offset, bytesRead);
 
-            totalBytesRead += bytesReadFromOriginalStream;
-            offset += bytesReadFromOriginalStream;
-            count -= bytesReadFromOriginalStream;
+            // Increment total, decrementing remaining.
+            sourceBytesRead += bytesRead;
+            remainingSourceBytesToRead -= bytesRead;
+
+            // Remaining source bytes were read.
+            if (sourceBytesRead == totalSourceBytesToRead)
+                break;
+
+            // End of stream reached, no bytes remain.
+            if (bytesRead == 0)
+                break;
         }
-
-        return totalBytesRead;
+        
+        return backingBytesRead + sourceBytesRead;
     }
 
     /// <inheritdoc />
     public override long Seek(long offset, SeekOrigin origin)
     {
+        Guard.IsTrue(BackingStream.CanSeek);
+        
         switch (origin)
         {
             case SeekOrigin.Begin:
                 Position = offset;
                 break;
             case SeekOrigin.Current:
-                Position = MemoryStream.Position + offset;
+                Position += offset;
                 break;
             case SeekOrigin.End:
-                Position = SourceStream.Length + offset;
+                Position = Length + offset;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.");
@@ -144,57 +222,27 @@ public class LazySeekStream : Stream, IFlushable
     }
 
     /// <inheritdoc />
-    public override void SetLength(long value)
-    {
-        if (value < 0)
-            throw new ArgumentOutOfRangeException(nameof(value), "Length must be non-negative.");
-
-        if (value < MemoryStream.Length)
-        {
-            // Truncate the memory stream
-            MemoryStream.SetLength(value);
-        }
-        else if (value > MemoryStream.Length)
-        {
-            long additionalBytesNeeded = value - MemoryStream.Length;
-
-            // Extend the memory stream with zeros or additional data from the original stream
-            if (SourceStream.CanRead && additionalBytesNeeded > 0)
-            {
-                var buffer = new byte[additionalBytesNeeded];
-                int bytesRead = SourceStream.Read(buffer, 0, buffer.Length);
-
-                MemoryStream.Seek(0, SeekOrigin.End);
-                MemoryStream.Write(buffer, 0, bytesRead);
-
-                if (bytesRead < additionalBytesNeeded)
-                {
-                    // Fill the rest with zeros if the original stream didn't have enough data
-                    var zeroFill = new byte[additionalBytesNeeded - bytesRead];
-                    MemoryStream.Write(zeroFill, 0, zeroFill.Length);
-                }
-            }
-            else
-            {
-                // Fill with zeros if the original stream can't be read or no additional bytes are needed
-                MemoryStream.SetLength(value);
-            }
-        }
-    }
+    public override void SetLength(long value) => BackingStream.SetLength(value);
 
     /// <inheritdoc />
-    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException($"Writing not supported by {nameof(LazySeekStream)}.");
+    public override void WriteByte(byte value) => BackingStream.WriteByte(value);
+
+    /// <inheritdoc />
+    public override void Write(byte[] buffer, int offset, int count) => BackingStream.Write(buffer, offset, count);
+
+    /// <inheritdoc />
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => BackingStream.WriteAsync(buffer, offset, count, cancellationToken);
 
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
-        // See https://stackoverflow.com/a/1015790
-        // If you are extending Stream, or MemoryStream etc. you will need to implement a call to Flush() when disposed/closed if it is necessary.
-        Flush();
-
-        // Dispose remaining resources 
         base.Dispose(disposing);
-        MemoryStream.Dispose();
+
+        // Only continue for managed resources.
+        if (!disposing)
+            return;
+        
+        BackingStream.Dispose();
         SourceStream.Dispose();
     }
 }
