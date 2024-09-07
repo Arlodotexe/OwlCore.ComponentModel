@@ -129,4 +129,16 @@ public class CopyOnFlushStream : Stream
         await BackingStream.FlushAsync(cancellationToken);
         await DestinationStream.FlushAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            BackingStream.Dispose();
+            DestinationStream.Dispose();
+        }
+        
+        base.Dispose(disposing);
+    }
 }
