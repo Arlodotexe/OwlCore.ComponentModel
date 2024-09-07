@@ -28,13 +28,18 @@ LazySeekStream.MemoryStream was renamed to BackingStream.
 
 [New]
 Added support for .NET 8.
-LazySeekStream can now take a custom backing stream, allowing lazy seek of streams larger than 2GB. The default is still a MemoryStream.
 Added CopyOnFlushStream, which wraps around a backing stream for read and writes and copies to a destination stream on flush.
 Added ReadOnlyOverrideStream, which wraps a stream and disallows writes.
+Added DisposableDelegate class for invoking an Action when disposed.
 Added DelegatedDisposalStream, which wraps a stream and disposes another `IDisposable` when disposed. 
 Added DelegatedAsyncDisposalStream, which wraps a stream and disposes another `IAsyncDisposable` when disposed. 
 Added AggregateDisposable, which aggregates many IDisposable into a single IDisposable, disposing all aggregates instances together.
 Added AggregateAsyncDisposable, which aggregates many IAsyncDisposable into a single IAsyncDisposable, disposing all aggregates instances together.
+
+[Improvements]
+LazySeekStream can now take a custom backing stream, allowing lazy seek of streams larger than 2GB. The default is still a MemoryStream.
+Refactored LazySeekStream, various bug fixes and performance improvements. 
+Added various unit tests for LazySeekStream.
 
 --- 0.8.2 ---
 [Improvements]
