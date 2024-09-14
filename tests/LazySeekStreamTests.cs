@@ -9,6 +9,8 @@ public sealed class LazySeekStreamTests
 {
     [DataRow(100, 100, 10)]
     [DataRow(100, 100, 100)]
+    [DataRow(10, 100, 10)]
+    [DataRow(10, 10, 100)]
     [DataRow(100, 1000, 10)]
     [DataRow(100, 1000, 100)]
     [DataRow(int.MaxValue - 1024, (long)int.MaxValue + 1024, 81920)]
@@ -37,10 +39,13 @@ public sealed class LazySeekStreamTests
 
     [DataRow(1000, 100, 10)]
     [DataRow(100, 100, 100)]
+    [DataRow(10, 100, 10)]
+    [DataRow(10, 10, 100)]
     [DataRow(100, 1000, 10)]
     [DataRow(100, 1000, 100)]
     [DataRow(int.MaxValue - 1024, (long)int.MaxValue + 1024, 81920)]
     [TestMethod]
+    [Timeout(5 * 60 * 1000)]
     public async Task CanReadSourceFromBacking(int sourceCapacity, long destinationLengthToWrite, int bufferSize)
     {
         // Memory stream is limited to 2GB by default, but we can adjust it for test purposes
@@ -74,6 +79,8 @@ public sealed class LazySeekStreamTests
 
     [DataRow(1000, 100, 10)]
     [DataRow(100, 100, 100)]
+    [DataRow(10, 100, 10)]
+    [DataRow(10, 10, 100)]
     [DataRow(100, 1000, 10)]
     [DataRow(100, 1000, 100)]
     [DataRow(int.MaxValue - 1024, (long)int.MaxValue + 1024, 81290)]
@@ -118,6 +125,9 @@ public sealed class LazySeekStreamTests
 
         while (remainingBytes > 0)
         {
+            if (remainingBytes < buffer.Length)
+                buffer = new byte[remainingBytes];
+
             remainingBytes -= lazySeekStream.Read(buffer);
         }
 
@@ -204,5 +214,7 @@ public sealed class LazySeekStreamTests
             CollectionAssert.AreEqual(destBuffer, srcBuffer);
             bytesChecked += srcBytesRead;
         }
+
+        Assert.AreEqual(srcStream.Length, destStream.Length);
     }
 }
