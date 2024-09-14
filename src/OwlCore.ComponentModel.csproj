@@ -14,13 +14,22 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.9.0</Version>
+    <Version>0.9.1</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.9.1 ---
+[Improvements]
+Complete internal refactor of LazySeekStream with a focus on tracking witten byte ranges and redirecting reads to backing as needed.
+Improved tests around LazySeekStream.
+
+[Fixes]
+Fixed several issues routing reads between source and backing have been fixed in LazySeekStream.
+Fixed issues where source stream could become misaligned when redirecting reads to backing.
+
 --- 0.9.0 ---
 [Breaking]
 WritableLazySeekStream was removed and replaced with a combination of LazySeekStream and the new CopyOnFlushStream.
@@ -154,7 +163,7 @@ Initial separated package release of OwlCore.ComponentModel. Transferred from Ow
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.0" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.1" />
   </ItemGroup>
 
   <ItemGroup>
