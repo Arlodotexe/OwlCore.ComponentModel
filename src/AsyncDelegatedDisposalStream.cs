@@ -37,7 +37,7 @@ public class AsyncDelegatedDisposalStream : Stream, IDelegable<IAsyncDisposable>
             if (Inner is IDisposable disposable)
                 disposable.Dispose();
             else
-                Inner.DisposeAsync().AsTask().Wait();
+                Inner.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
     }
 
