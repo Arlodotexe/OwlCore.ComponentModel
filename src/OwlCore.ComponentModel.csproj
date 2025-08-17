@@ -24,7 +24,7 @@
 --- 0.10.0 ---
 [New]
 Added AsyncDelegatedDisposalStream, a Stream wrapper that disposes both the underlying stream and an additional IAsyncDisposable when disposed. This class enforces that the wrapped stream implements IAsyncDisposable and delegates all standard stream operations to the source stream.
-Introduced AsyncDisposableDelegate, a class that implements IAsyncDisposable and allows specifying a custom asynchronous disposal callback via a Func<Task>
+Introduced AsyncDisposableDelegate, a class that implements IAsyncDisposable and allows specifying a custom asynchronous disposal callback via a Func{Task}
 
 
 --- 0.9.1 ---
@@ -132,7 +132,7 @@ All public and protected methods in SettingsBase are now virtual.
 --- 0.0.0 ---
 [New]
 Initial separated package release of OwlCore.ComponentModel. Transferred from OwlCore 0.1.0.
-		</PackageReleaseNotes>
+    </PackageReleaseNotes>
     <DebugType>embedded</DebugType>
     <NeutralLanguage>en</NeutralLanguage>
     <Authors>Arlo Godfrey</Authors>
