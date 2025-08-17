@@ -31,6 +31,9 @@ public class AsyncDelegatedDisposalStream : Stream, IDelegable<IAsyncDisposable>
 
         if (disposing)
         {
+            // Dispose the source stream synchronously
+            _sourceStream.Dispose();
+
             if (Inner is IDisposable disposable)
                 disposable.Dispose();
             else
@@ -43,6 +46,10 @@ public class AsyncDelegatedDisposalStream : Stream, IDelegable<IAsyncDisposable>
     {
         // Perform async cleanup.
         await Inner.DisposeAsync();
+
+        // Dispose the source stream asynchronously if it supports it
+        if (_sourceStream is IAsyncDisposable asyncDisposableStream)
+            await asyncDisposableStream.DisposeAsync();
 
         // Dispose of unmanaged resources.
         Dispose(false);
