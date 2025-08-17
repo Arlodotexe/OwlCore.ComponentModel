@@ -15,7 +15,7 @@ public class AsyncDelegatedDisposalStream : Stream, IDelegable<IAsyncDisposable>
     /// <summary>
     /// Creates a new instance of <see cref="AsyncDelegatedDisposalStream"/>.
     /// </summary>
-    /// <param name="sourceStream">The stream to dispose asynchronously.</param>
+    /// <param name="sourceStream">The stream to wrap. Must implement <see cref="IAsyncDisposable"/>.</param>
     public AsyncDelegatedDisposalStream(Stream sourceStream)
     {
         if (sourceStream is not IAsyncDisposable)
@@ -104,6 +104,8 @@ public class AsyncDelegatedDisposalStream : Stream, IDelegable<IAsyncDisposable>
         set => _sourceStream.Position = value;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// The additional <see cref="IAsyncDisposable"/> instance that will be disposed along with the stream.
+    /// </summary>
     public required IAsyncDisposable Inner { get; init; }
 }
