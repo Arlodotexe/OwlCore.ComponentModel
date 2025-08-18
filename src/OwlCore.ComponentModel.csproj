@@ -14,13 +14,19 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.9.1</Version>
+    <Version>0.10.0</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.10.0 ---
+[New]
+Added AsyncDelegatedDisposalStream, a Stream wrapper that disposes both the underlying stream and an additional IAsyncDisposable when disposed. This class enforces that the wrapped stream implements IAsyncDisposable and delegates all standard stream operations to the source stream.
+Introduced AsyncDisposableDelegate, a class that implements IAsyncDisposable and allows specifying a custom asynchronous disposal callback via a Func{Task}
+
+
 --- 0.9.1 ---
 [Improvements]
 Complete internal refactor of LazySeekStream with a focus on tracking witten byte ranges and redirecting reads to backing as needed.
@@ -126,7 +132,7 @@ All public and protected methods in SettingsBase are now virtual.
 --- 0.0.0 ---
 [New]
 Initial separated package release of OwlCore.ComponentModel. Transferred from OwlCore 0.1.0.
-		</PackageReleaseNotes>
+    </PackageReleaseNotes>
     <DebugType>embedded</DebugType>
     <NeutralLanguage>en</NeutralLanguage>
     <Authors>Arlo Godfrey</Authors>
