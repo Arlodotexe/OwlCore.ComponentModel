@@ -95,14 +95,10 @@ public class LazySeekStream : Stream, IFlushable
     /// Creates a new instance of <see cref="LazySeekStream"/> with a <see cref="MemoryStream"/> to back it (limited to 2.1GB).
     /// </summary>
     /// <param name="sourceStream">The underlying stream to lazy seek.</param>
-    /// <param name="backingCapacity">The maximum capacity to use for the backing <see cref="MemoryStream"/>.</param>
-    public LazySeekStream(Stream sourceStream, int backingCapacity = int.MaxValue)
+    public LazySeekStream(Stream sourceStream)
     {
         SourceStream = sourceStream;
-        BackingStream = new MemoryStream
-        {
-            Capacity = backingCapacity,
-        };
+        BackingStream = new MemoryStream();
     }
 
     /// <summary>
@@ -271,16 +267,18 @@ public class LazySeekStream : Stream, IFlushable
             {
                 var sourceBytesToReadAndDiscard = Position - SourcePosition;
                 var remainingSourceBytesToReadAndDiscard = sourceBytesToReadAndDiscard;
-                var discardBuffer = new byte[sourceBytesToReadAndDiscard];
+                var discardBuffer = new byte[count];
 
                 while (remainingSourceBytesToReadAndDiscard > 0)
                 {
-                    var sourceBytesRead = SourceStream.Read(discardBuffer, 0, (int)remainingSourceBytesToReadAndDiscard);
+                    var sourceBytesRead = SourceStream.Read(discardBuffer, 0, discardBuffer.Length);
                     if (sourceBytesRead == 0)
                         break;
 
                     _sourcePosition += sourceBytesRead;
                     remainingSourceBytesToReadAndDiscard -= sourceBytesRead;
+                        
+                    discardBuffer = new byte[Math.Min(remainingSourceBytesToReadAndDiscard, count)];
                 }
 
                 // Throws here suggest source returned zero bytes earlier than expected.
@@ -369,16 +367,16 @@ public class LazySeekStream : Stream, IFlushable
             {
                 var sourceBytesToReadAndDiscard = Position - SourcePosition;
                 var remainingSourceBytesToReadAndDiscard = sourceBytesToReadAndDiscard;
-                var discardBuffer = new byte[sourceBytesToReadAndDiscard];
+                var discardBuffer = new byte[count];
 
                 while (remainingSourceBytesToReadAndDiscard > 0)
                 {
-                    var bufferPosition = 0;
-                    var sourceBytesRead = await SourceStream.ReadAsync(discardBuffer, bufferPosition, (int)remainingSourceBytesToReadAndDiscard, cancellationToken);
+                    var sourceBytesRead = await SourceStream.ReadAsync(discardBuffer, 0, discardBuffer.Length, cancellationToken);
                     if (sourceBytesRead == 0)
                         break;
+                        
+                    discardBuffer = new byte[Math.Min(remainingSourceBytesToReadAndDiscard, count)];
 
-                    bufferPosition += sourceBytesRead;
                     _sourcePosition += sourceBytesRead;
                     remainingSourceBytesToReadAndDiscard -= sourceBytesRead;
                 }

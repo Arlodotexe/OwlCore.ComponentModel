@@ -42,7 +42,11 @@ public class AsyncDelegatedDisposalStream : Stream, IDelegable<IAsyncDisposable>
     }
 
     /// <inheritdoc />
+#if NET8_0_OR_GREATER
+    public async override ValueTask DisposeAsync()
+#else
     public async ValueTask DisposeAsync()
+#endif
     {
         // Perform async cleanup.
         await Inner.DisposeAsync();
