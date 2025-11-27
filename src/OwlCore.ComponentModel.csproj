@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>11.0</LangVersion>
     <WarningsAsErrors>nullable</WarningsAsErrors>
@@ -25,7 +25,6 @@
 [New]
 Added AsyncDelegatedDisposalStream, a Stream wrapper that disposes both the underlying stream and an additional IAsyncDisposable when disposed. This class enforces that the wrapped stream implements IAsyncDisposable and delegates all standard stream operations to the source stream.
 Introduced AsyncDisposableDelegate, a class that implements IAsyncDisposable and allows specifying a custom asynchronous disposal callback via a Func{Task}
-
 
 --- 0.9.1 ---
 [Improvements]
