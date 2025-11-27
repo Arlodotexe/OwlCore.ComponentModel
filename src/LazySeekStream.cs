@@ -92,19 +92,16 @@ public class LazySeekStream : Stream, IFlushable
     public Stream BackingStream { get; }
 
     /// <summary>
-    /// Creates a new instance of <see cref="LazySeekStream"/>.
+    /// Creates a new instance of <see cref="LazySeekStream"/> with a <see cref="MemoryStream"/> to back it (limited to 2.1GB).
     /// </summary>
-    /// <param name="sourceStream"></param>
-    public LazySeekStream(Stream sourceStream)
+    /// <param name="sourceStream">The underlying stream to lazy seek.</param>
+    /// <param name="backingCapacity">The maximum capacity to use for the backing <see cref="MemoryStream"/>.</param>
+    public LazySeekStream(Stream sourceStream, int backingCapacity = int.MaxValue)
     {
         SourceStream = sourceStream;
-
-        if (sourceStream.Length > int.MaxValue)
-            throw new ArgumentException($"The provided source stream is too long to fit into a {nameof(MemoryStream)}. Please provide a writeable backing stream to store lazily loaded data in.");
-
         BackingStream = new MemoryStream
         {
-            Capacity = (int)sourceStream.Length,
+            Capacity = backingCapacity,
         };
     }
 
@@ -215,12 +212,12 @@ public class LazySeekStream : Stream, IFlushable
     {
         ValidateBufferParams(buffer, offset, count);
 
-        long totalBytesToRead = Math.Min(count, Length - Position);
+        long totalBytesToRead = count;
         var remainingBytesToRead = totalBytesToRead;
         var bytesRead = 0;
 
-        // The backing stream should only be used to read after rewind or written data.
-        // We know the stream has been rewound or otherwise written to because the byte ranges should be marked as written to.
+        // The backing stream should only be used to read after the stream is rewound or written to.
+        // The written/rewound ranges are marked.
         // - Read backing for written ranges, advance source + discard.
         // - Read source for unwritten ranges, write to backing.
         while (remainingBytesToRead > 0)
@@ -248,51 +245,56 @@ public class LazySeekStream : Stream, IFlushable
                 }
             }
 
-            // Read from source/backing to buffer.
+            // Read from source/backing to buffer.            
+            // bytesRead + offset used here to fill the same buffer using multiple read calls
+            var bytesReadOffset = bytesRead + offset;
             var bufferSize = (int)Math.Min(remainingBytesToReadInternal, count);
-            int bytesReadInternal = streamToRead.Read(buffer, bytesRead + offset, bufferSize);
+            int lastBytesReadCount = streamToRead.Read(buffer, bytesReadOffset, bufferSize);
 
             // Reads from source should be written to backing.
             if (streamToRead == SourceStream)
             {
-                _sourcePosition += bytesReadInternal;
+                _sourcePosition += lastBytesReadCount;
 
                 var writeStart = BackingStream.Position;
-                BackingStream.Write(buffer, bytesRead + offset, bytesReadInternal);
+                BackingStream.Write(buffer, bytesReadOffset, lastBytesReadCount);
 
                 var writeEnd = BackingStream.Position;
                 AddWrittenRange(new(writeStart, writeEnd));
             }
 
             // If able, reads from backing stream should also advance the source stream.
-            // Ensures that the source next reads from the expected position after backing bytes are read.
+            // Ensures that the source next reads from the expected position after backing bytes are read,
+            // but skips over bytes that have been written through this consumer.
             // Discards bytes read from source, since they were read from backing already.
-            var sourceCanAdvance = SourceStream.Length > SourcePosition;
-            var sourcePositionIsBehindBacking = SourcePosition < Position;
-
-            if (streamToRead == BackingStream && sourceCanAdvance && sourcePositionIsBehindBacking)
+            if (streamToRead == BackingStream && SourcePosition < Position)
             {
-                var sourceBytesToReadAndDiscard = bytesReadInternal;
+                var sourceBytesToReadAndDiscard = Position - SourcePosition;
                 var remainingSourceBytesToReadAndDiscard = sourceBytesToReadAndDiscard;
                 var discardBuffer = new byte[sourceBytesToReadAndDiscard];
 
                 while (remainingSourceBytesToReadAndDiscard > 0)
                 {
-                    var sourceBytesRead = SourceStream.Read(discardBuffer, 0, remainingSourceBytesToReadAndDiscard);
+                    var sourceBytesRead = SourceStream.Read(discardBuffer, 0, (int)remainingSourceBytesToReadAndDiscard);
                     if (sourceBytesRead == 0)
                         break;
 
-                    _sourcePosition += bytesReadInternal;
+                    _sourcePosition += sourceBytesRead;
                     remainingSourceBytesToReadAndDiscard -= sourceBytesRead;
                 }
 
-                Guard.IsEqualTo(remainingSourceBytesToReadAndDiscard, 0);
-                Guard.IsEqualTo(SourcePosition, Position);
+                // Throws here suggest source returned zero bytes earlier than expected.
+                // This is allowed behavior.
+                // Guard.IsEqualTo(remainingSourceBytesToReadAndDiscard, 0);
+                
+                // Source position may not be in line with Backing position if data was written beyond the length of the source stream.
+                // This is allowed behavior.
+                // Guard.IsEqualTo(SourcePosition, Position); 
             }
 
             // Increment total, decrementing remaining.
-            bytesRead += bytesReadInternal;
-            remainingBytesToRead -= bytesReadInternal;
+            bytesRead += lastBytesReadCount;
+            remainingBytesToRead -= lastBytesReadCount;
 
             // All bytes were read.
             if (bytesRead == totalBytesToRead)
@@ -311,14 +313,12 @@ public class LazySeekStream : Stream, IFlushable
     {
         ValidateBufferParams(buffer, offset, count);
 
-        long totalBytesToRead = Math.Min(count, Length - Position);
+        long totalBytesToRead = count;
         var remainingBytesToRead = totalBytesToRead;
         var bytesRead = 0;
 
-        // The backing stream should only be used to read after rewind or written data.
-        // We know the stream has been rewound or otherwise written to because the byte ranges should be marked as written to.
-        // - Read backing for written ranges, advance source + discard.
-        // - Read source for unwritten ranges, write to backing.
+        // The backing stream should only be used to read after the stream is rewound or written to.
+        // The written/rewound ranges are marked.
         while (remainingBytesToRead > 0)
         {
             var streamToRead = SourceStream;
@@ -345,16 +345,18 @@ public class LazySeekStream : Stream, IFlushable
             }
 
             // Read from source/backing to buffer.
+            // bytesRead + offset used here to fill the same buffer using multiple read calls
+            var bytesReadOffset = bytesRead + offset;
             var bufferSize = (int)Math.Min(remainingBytesToReadInternal, count);
-            int bytesReadInternal = await streamToRead.ReadAsync(buffer, bytesRead + offset, bufferSize, cancellationToken);
+            int lastBytesReadCount = await streamToRead.ReadAsync(buffer, bytesReadOffset, bufferSize, cancellationToken);
 
             // Reads from source should be written to backing.
             if (streamToRead == SourceStream)
             {
-                _sourcePosition += bytesReadInternal;
+                _sourcePosition += lastBytesReadCount;
 
                 var writeStart = BackingStream.Position;
-                await BackingStream.WriteAsync(buffer, bytesRead + offset, bytesReadInternal, cancellationToken);
+                await BackingStream.WriteAsync(buffer, bytesReadOffset, lastBytesReadCount, cancellationToken);
 
                 var writeEnd = BackingStream.Position;
                 AddWrittenRange(new(writeStart, writeEnd));
@@ -363,32 +365,36 @@ public class LazySeekStream : Stream, IFlushable
             // If able, reads from backing stream should also advance the source stream.
             // Ensures that the source next reads from the expected position after backing bytes are read.
             // Discards bytes read from source, since they were read from backing already.
-            var sourceCanAdvance = SourceStream.Length > SourcePosition;
-            var sourcePositionIsBehindBacking = SourcePosition < Position;
-
-            if (streamToRead == BackingStream && sourceCanAdvance && sourcePositionIsBehindBacking)
+            if (streamToRead == BackingStream && SourcePosition < Position)
             {
-                var sourceBytesToReadAndDiscard = bytesReadInternal;
+                var sourceBytesToReadAndDiscard = Position - SourcePosition;
                 var remainingSourceBytesToReadAndDiscard = sourceBytesToReadAndDiscard;
                 var discardBuffer = new byte[sourceBytesToReadAndDiscard];
 
                 while (remainingSourceBytesToReadAndDiscard > 0)
                 {
-                    var sourceBytesRead = await SourceStream.ReadAsync(discardBuffer, 0, remainingSourceBytesToReadAndDiscard, cancellationToken);
+                    var bufferPosition = 0;
+                    var sourceBytesRead = await SourceStream.ReadAsync(discardBuffer, bufferPosition, (int)remainingSourceBytesToReadAndDiscard, cancellationToken);
                     if (sourceBytesRead == 0)
                         break;
 
-                    _sourcePosition += bytesReadInternal;
+                    bufferPosition += sourceBytesRead;
+                    _sourcePosition += sourceBytesRead;
                     remainingSourceBytesToReadAndDiscard -= sourceBytesRead;
                 }
 
-                Guard.IsEqualTo(remainingSourceBytesToReadAndDiscard, 0);
-                Guard.IsEqualTo(SourcePosition, Position);
+                // Throws here suggest source returned zero bytes earlier than expected.
+                // This is allowed behavior.
+                // Guard.IsEqualTo(remainingSourceBytesToReadAndDiscard, 0);
+                
+                // Source position may not be in line with Backing position if data was written beyond the length of the source stream.
+                // This is allowed behavior.
+                // Guard.IsEqualTo(SourcePosition, Position); 
             }
 
             // Increment total, decrementing remaining.
-            bytesRead += bytesReadInternal;
-            remainingBytesToRead -= bytesReadInternal;
+            bytesRead += lastBytesReadCount;
+            remainingBytesToRead -= lastBytesReadCount;
 
             // All bytes were read.
             if (bytesRead == totalBytesToRead)
