@@ -104,7 +104,7 @@ public sealed class LazySeekStreamTests
         while (remainingBytes > 0)
         {
             if (remainingBytes < buffer.Length)
-                buffer = new byte[remainingBytes];
+                buffer = new byte[Math.Min(remainingBytes, bufferSize)];
 
             lazySeekStream.Write(buffer);
             remainingBytes -= buffer.Length;
@@ -113,6 +113,7 @@ public sealed class LazySeekStreamTests
         Assert.AreEqual(0, remainingBytes);
         Assert.AreNotEqual(0, lazySeekStream.Length);
         Assert.AreEqual(destinationLengthToWrite, lazySeekStream.Position);
+        Assert.AreEqual(lazySeekStream.Length, lazySeekStream.Position);
 
         // Rewind
         var newPos = 0;
@@ -126,7 +127,7 @@ public sealed class LazySeekStreamTests
         while (remainingBytes > 0)
         {
             if (remainingBytes < buffer.Length)
-                buffer = new byte[remainingBytes];
+                buffer = new byte[Math.Min(remainingBytes, bufferSize)];
 
             remainingBytes -= lazySeekStream.Read(buffer);
         }
