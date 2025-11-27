@@ -271,7 +271,7 @@ public class LazySeekStream : Stream, IFlushable
 
                 while (remainingSourceBytesToReadAndDiscard > 0)
                 {
-                    var sourceBytesRead = SourceStream.Read(discardBuffer);
+                    var sourceBytesRead = SourceStream.Read(discardBuffer, 0, discardBuffer.Length);
                     if (sourceBytesRead == 0)
                         break;
 
@@ -371,7 +371,7 @@ public class LazySeekStream : Stream, IFlushable
 
                 while (remainingSourceBytesToReadAndDiscard > 0)
                 {
-                    var sourceBytesRead = await SourceStream.ReadAsync(discardBuffer, cancellationToken);
+                    var sourceBytesRead = await SourceStream.ReadAsync(discardBuffer, 0, discardBuffer.Length, cancellationToken);
                     if (sourceBytesRead == 0)
                         break;
                         
