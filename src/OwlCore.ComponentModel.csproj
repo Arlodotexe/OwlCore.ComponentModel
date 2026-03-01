@@ -14,13 +14,17 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.10.1</Version>
+    <Version>0.11.0</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.11.0 ---
+[Improvements]
+Added net9.0 as a target framework. System.Linq.Async and Microsoft.Bcl.AsyncInterfaces are now conditioned to exclude net10.0+, where these APIs are built into the runtime.
+
 --- 0.10.1 ---
 [Improvements]
 Refactored LazySeekStream to no longer require the underlying source stream to have a known Length.
