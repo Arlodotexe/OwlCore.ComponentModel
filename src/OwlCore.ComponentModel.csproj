@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
@@ -14,13 +14,19 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <Author>Arlo Godfrey</Author>
-    <Version>0.11.0</Version>
+    <Version>0.11.1</Version>
     <Product>OwlCore</Product>
     <Description>Provides classes that are used to implement the run-time behavior of components.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>logo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Arlodotexe/OwlCore.ComponentModel</PackageProjectUrl>
     <PackageReleaseNotes>
+--- 0.11.1 ---
+[Improvements]
+Updated Microsoft.Bcl.AsyncInterfaces to 10.0.3.
+Updated System.Linq.Async to 7.0.0. Removed the net10.0 exclusion condition — the LINQ async operators are not built into the runtime and must be referenced on all TFMs.
+Updated CommunityToolkit.Diagnostics to 8.4.0.
+
 --- 0.11.0 ---
 [Improvements]
 Added net9.0 as a target framework. System.Linq.Async and Microsoft.Bcl.AsyncInterfaces are now conditioned to exclude net10.0+, where these APIs are built into the runtime.
@@ -170,14 +176,14 @@ Initial separated package release of OwlCore.ComponentModel. Transferred from Ow
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.3" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="PolySharp" Version="1.14.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.1" />
+    <PackageReference Include="System.Linq.Async" Version="7.0.0" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.4.0" />
   </ItemGroup>
 
   <ItemGroup>
